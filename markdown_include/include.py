@@ -25,6 +25,7 @@
 from __future__ import print_function
 import re
 import os.path
+import requests
 from codecs import open
 from markdown.extensions import Extension
 from markdown.preprocessors import Preprocessor
@@ -72,14 +73,17 @@ class IncludePreprocessor(Preprocessor):
 
                 if m:
                     filename = m.group(1)
-                    filename = os.path.expanduser(filename)
-                    if not os.path.isabs(filename):
-                        filename = os.path.normpath(
-                            os.path.join(self.base_path,filename)
-                        )
                     try:
-                        with open(filename, 'r', encoding=self.encoding) as r:
-                            text = r.readlines()
+                        if filename.startswith('http'):
+                            text = requests.get(filename).content.decode('ascii', 'ignore').splitlines(True)
+                        else:
+                            filename = os.path.expanduser(filename)
+                            if not os.path.isabs(filename):
+                                filename = os.path.normpath(
+                                    os.path.join(self.base_path,filename)
+                                )
+                            with open(filename, 'r', encoding=self.encoding) as r:
+                                text = r.readlines()
                     except Exception as e:
                         print('Warning: could not find file {}. Ignoring '
                             'include statement. Error: {}'.format(filename, e))
